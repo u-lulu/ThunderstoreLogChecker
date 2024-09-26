@@ -51,12 +51,11 @@ for mod in provided_mods:
 		out_of_date_stuff.add(mod)
 
 safe_package_types = {"Skins","Mods","Client-side"}
-
 ood_safer_mods = set()
 print("Checking which mods are probably safe...")
 for ood_mod in out_of_date_stuff:
 	tags = package_tags[ood_mod]
-	if "Skins" in tags and len(safe_package_types.union(tags)) <= 3:
+	if "Skins" in tags and tags.issubset(safe_package_types):
 		ood_safer_mods.add(ood_mod)
 
 for ood_safe_mod in ood_safer_mods:
