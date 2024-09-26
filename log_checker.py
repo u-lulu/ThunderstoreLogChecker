@@ -21,41 +21,66 @@ with open(filepath,"r") as file:
 			provided_mods.add(mod_string)
 			print("- " + mod_string)
 print(f"{found_mods} mods found in log.")
-#print(provided_mods)
 print()
 
 print("Getting packages...")
 package_list = requests.get("https://thunderstore.io/c/riskofrain2/api/v1/package/").json()
 print(f"{len(package_list)} packages found on TS.\n")
 
-print("Collecting package timestamps...")
+print("Collecting package metadata...")
 package_timestamps = dict()
+package_tags = dict()
 for package in package_list:
+	tags = set(package['categories'])
 	for v in package['versions']:
 		name = v['full_name']
 		converted_timestamp = datetime.strptime(v['date_created'],"%Y-%m-%dT%H:%M:%S.%fZ")
 		if name not in package_timestamps or package_timestamps[name] < converted_timestamp:
 			package_timestamps[name] = converted_timestamp
-print(f"Collected {len(package_timestamps)} timestamps.\n")
+			package_tags[name] = tags
+print(f"Collected {len(package_timestamps)} metadata pieces.\n")
 
 out_of_date_stuff = set()
 
 print("Searching for out of date packages...")
 for mod in provided_mods:
 	if 'R2API' in mod.upper():
+		# out of date R2API packages are fine and generally expected in most cases
 		continue
 	if package_timestamps[mod] < SOTS_update:
 		out_of_date_stuff.add(mod)
 
+safe_package_types = {"Skins","Mods","Client-side"}
+
+ood_safer_mods = set()
+print("Checking which mods are probably safe...")
+for ood_mod in out_of_date_stuff:
+	tags = package_tags[ood_mod]
+	if "Skins" in tags and len(safe_package_types.union(tags)) <= 3:
+		ood_safer_mods.add(ood_mod)
+
+for ood_safe_mod in ood_safer_mods:
+	out_of_date_stuff.remove(ood_safe_mod)
+
 if len(out_of_date_stuff) > 0:
-	print(f"Out of date mods found ({len(out_of_date_stuff)}):")
+	print(f"\nOut of date mods found ({len(out_of_date_stuff)}):")
 	counter = 0
 	for mod in sorted(list(out_of_date_stuff)):
 		diff = SOTS_update - package_timestamps[mod]
 		counter += 1
-		print(f"{counter}) {mod} (Out of date by {diff})")
+		print(f"{counter}) {mod} (Out of date by {diff.days} days)")
+		
 else:
 	print("No outdated mods found.")
+
+if len(ood_safer_mods) > 0:
+	print(f"\nBelow is a list of {len(ood_safer_mods)} skin mods that are technically out of date, but are unlikely to cause problems.")
+	print(f"Disable them if things are still broken after removing everything in the above list.")
+	counter = 0
+	for mod in sorted(list(ood_safer_mods)):
+		diff = SOTS_update - package_timestamps[mod]
+		counter += 1
+		print(f"{counter}) {mod} (Out of date by {diff.days} days)")
 
 print("\nPress any key to close...")
 wait()
