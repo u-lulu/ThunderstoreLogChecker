@@ -50,7 +50,7 @@ for mod in provided_mods:
 	if package_timestamps[mod] < SOTS_update:
 		out_of_date_stuff.add(mod)
 
-safe_package_types = {"Skins","Mods","Client-side"}
+safe_package_types = {"Skins","Mods","Client-side","NSFW","Survivors of the Void","Seekers of the Storm Update"}
 ood_safer_mods = set()
 print("Checking which mods are probably safe...")
 for ood_mod in out_of_date_stuff:
