@@ -1,7 +1,9 @@
 import requests
 from datetime import datetime
 from sys import argv
-from msvcrt import getch as wait
+from msvcrt import getch
+from io import BytesIO
+import zipfile
 
 mod_line_starter = "[Info   :   BepInEx] TS Manifest: "
 SOTS_update = datetime.fromtimestamp(1724779800)
@@ -81,5 +83,33 @@ if len(ood_safer_mods) > 0:
 		counter += 1
 		print(f"{counter}) {mod} (Out of date by {diff.days} days)")
 
+mod_profile_string = "profileName: LatestTSLogCheckerExport"
+mod_profile_string += "\nmods:"
+
+for mod in provided_mods:
+	mj,mn,pt = mod.split('-')[-1].split('.')
+	package = '-'.join(mod.split('-')[:-1])
+
+	mod_profile_string += f"\n- name: {package}"
+	mod_profile_string += f"\n  version:"
+	mod_profile_string += f"\n    major: {mj}"
+	mod_profile_string += f"\n    minor: {mn}"
+	mod_profile_string += f"\n    patch: {pt}"
+	mod_profile_string += f"\n  enabled: true"
+
+mod_profile_string += "\nsource: r2"
+mod_profile_string += "\nignoredUpdates: []\n"
+
+export_filename = 'latest_log_profile.r2z'
+
+zip_buffer = BytesIO()
+with zipfile.ZipFile(zip_buffer,'w',zipfile.ZIP_DEFLATED) as zipf:
+	zipf.writestr('export.r2x',mod_profile_string)
+zip_buffer.seek(0)
+with open(export_filename,'wb') as bin_file:
+	bin_file.write(zip_buffer.getbuffer())
+
+print(f"\n- Created r2modman profile for this log, saved as {export_filename}.")
+
 print("\nPress any key to close...")
-wait()
+getch()
