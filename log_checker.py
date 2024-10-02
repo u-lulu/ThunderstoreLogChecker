@@ -14,7 +14,7 @@ if filepath != "LogOutput.log":
 print("Getting modlist from log...")
 provided_mods = set()
 found_mods = 0
-with open(filepath,"r") as file:
+with open(filepath,"r",encoding='utf-8') as file:
 	lines = file.read().split("\n")
 	for line in lines:
 		if mod_line_starter in line:
