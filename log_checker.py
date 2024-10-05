@@ -49,6 +49,9 @@ for mod in provided_mods:
 	if 'R2API' in mod.upper():
 		# out of date R2API packages are fine and generally expected in most cases
 		continue
+	if '-Zio' in mod:
+		# zio mods are generally fine, they don't use game code
+		continue
 	if package_timestamps[mod] < SOTS_update:
 		out_of_date_stuff.add(mod)
 
