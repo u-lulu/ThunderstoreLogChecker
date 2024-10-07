@@ -32,6 +32,7 @@ print(f"{len(package_list)} packages found on TS.\n")
 print("Collecting package metadata...")
 package_timestamps = dict()
 package_tags = dict()
+package_dependencies = dict()
 for package in package_list:
 	tags = set(package['categories'])
 	for v in package['versions']:
@@ -40,6 +41,7 @@ for package in package_list:
 		if name not in package_timestamps or package_timestamps[name] < converted_timestamp:
 			package_timestamps[name] = converted_timestamp
 			package_tags[name] = tags
+			package_dependencies[name] = v['dependencies']
 print(f"Collected {len(package_timestamps)} metadata pieces.\n")
 
 out_of_date_stuff = set()
