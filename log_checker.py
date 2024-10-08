@@ -5,6 +5,19 @@ from msvcrt import getch
 from io import BytesIO
 import zipfile
 
+def pk_name_split(full_name: str):
+	l = full_name.split("-")
+	version = l[-1]
+	l = l[:-1]
+	name = '-'.join(l)
+	return name,version
+
+def getmod_byname(modlist: set[str], name: str):
+	for item in modlist:
+		if item.startswith(name):
+			return item
+	return None
+
 mod_line_starter = "[Info   :   BepInEx] TS Manifest: "
 SOTS_update = datetime.fromtimestamp(1724779800)
 filepath = "LogOutput.log" if len(argv) <= 1 else argv[1]
@@ -35,6 +48,9 @@ package_tags = dict()
 package_dependencies = dict()
 for package in package_list:
 	tags = set(package['categories'])
+	if 'Modpacks' in tags:
+		# don't consider modpacks at all
+		continue
 	for v in package['versions']:
 		name = v['full_name']
 		converted_timestamp = datetime.strptime(v['date_created'],"%Y-%m-%dT%H:%M:%S.%fZ")
@@ -68,6 +84,22 @@ for ood_mod in out_of_date_stuff:
 for ood_safe_mod in ood_safer_mods:
 	out_of_date_stuff.remove(ood_safe_mod)
 
+print("Checking for old dependencies...")
+ood_dependancy_mods = set()
+provided_mods_names_only = [pk_name_split(x)[0] for x in provided_mods]
+for mod in provided_mods:
+	if mod in out_of_date_stuff:
+		# if the mod is out of date, dw about it
+		continue
+	deps = package_dependencies[mod]
+	name,ver = pk_name_split(mod)
+	for dependency in deps:
+		dep_name,dep_ver = pk_name_split(dependency)
+		current_version = getmod_byname(out_of_date_stuff,dep_name)
+		if current_version is not None:
+			ood_dependancy_mods.add(current_version)
+			out_of_date_stuff.remove(current_version)
+
 if len(out_of_date_stuff) > 0:
 	print(f"\nOut of date mods found ({len(out_of_date_stuff)}):")
 	counter = 0
@@ -79,9 +111,18 @@ if len(out_of_date_stuff) > 0:
 else:
 	print("No outdated mods found.")
 
+if len(ood_dependancy_mods) > 0:
+	print(f"\nBelow is a list of {len(ood_dependancy_mods)} mods that are technically out of date, but are listed as dependencies of more recent mods.")
+	print("These are unlikely to cause issues, but are listed here for convenience.")
+	counter = 0
+	for mod in sorted(list(ood_dependancy_mods)):
+		diff = SOTS_update - package_timestamps[mod]
+		counter += 1
+		print(f"{counter}) {mod} (Out of date by {diff.days} days)")
+
 if len(ood_safer_mods) > 0:
 	print(f"\nBelow is a list of {len(ood_safer_mods)} skin mods that are technically out of date, but are unlikely to cause problems.")
-	print(f"Disable them if things are still broken after removing everything in the above list.")
+	print("Disable them if things are still broken after removing everything in the above list.")
 	counter = 0
 	for mod in sorted(list(ood_safer_mods)):
 		diff = SOTS_update - package_timestamps[mod]
