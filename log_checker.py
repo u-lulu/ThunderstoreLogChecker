@@ -46,8 +46,10 @@ print("Collecting package metadata...")
 package_timestamps = dict()
 package_tags = dict()
 package_dependencies = dict()
+deprecations = dict()
 for package in package_list:
 	tags = set(package['categories'])
+	deprecated = package['is_deprecated']
 	if 'Modpacks' in tags:
 		# don't consider modpacks at all
 		continue
@@ -58,12 +60,23 @@ for package in package_list:
 			package_timestamps[name] = converted_timestamp
 			package_tags[name] = tags
 			package_dependencies[name] = v['dependencies']
+			deprecations[name] = deprecated
 print(f"Collected {len(package_timestamps)} metadata pieces.\n")
+
+deprecated_stuff = set()
+
+print("Searching for deprecated packages...")
+for mod in provided_mods:
+	if deprecations[mod]:
+		deprecated_stuff.add(mod)
 
 out_of_date_stuff = set()
 
 print("Searching for out of date packages...")
 for mod in provided_mods:
+	if mod in deprecated_stuff:
+		# deprecated packages will be handled seperately
+		continue
 	if 'R2API' in mod.upper():
 		# out of date R2API packages are fine and generally expected in most cases
 		continue
@@ -110,6 +123,15 @@ if len(out_of_date_stuff) > 0:
 		
 else:
 	print("No outdated mods found.")
+
+if len(deprecated_stuff) > 0:
+	print(f"\nThese {len(deprecated_stuff)} mods are DEPRECATED.")
+	print("Generally, deprecated mods should be disabled to avoid issues.")
+	counter = 0
+	for mod in sorted(list(deprecated_stuff)):
+		diff = SOTS_update - package_timestamps[mod]
+		counter += 1
+		print(f"{counter}) {mod} (Out of date by {diff.days} days)")
 
 if len(ood_dependancy_mods) > 0:
 	print(f"\nBelow is a list of {len(ood_dependancy_mods)} mods that are technically out of date, but are listed as dependencies of more recent mods.")
