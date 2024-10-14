@@ -58,7 +58,6 @@ for package in package_list:
 			package_timestamps[name] = converted_timestamp
 			package_tags[name] = tags
 			package_dependencies[name] = v['dependencies']
-print(f"Collected {len(package_timestamps)} metadata pieces.\n")
 
 out_of_date_stuff = set()
 
